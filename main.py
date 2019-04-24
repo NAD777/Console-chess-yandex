@@ -223,22 +223,22 @@ class Bishop:
     def can_move(self, board, row, col, row1, col1):
         if correct_coords(row, col) and correct_coords(row1, col1) and \
                 board.get_color(row, col) != board.get_color(row1, col1) and \
-                ((row == row1 and col != col1) or (row != row1 and col == col1)):
-            if row < row1 and col == col1:
-                for i in range(row + 1, row1):
-                    if not (board.field[i][col] is None):
+                abs(col - col1) == abs(row - row1):
+            if row < row1 and col < col1:
+                for i in range(1, row1 - row):
+                    if not (board.field[row + i][col + i] is None):
                         return False
-            elif row > row1 and col == col1:
-                for i in range(row1 + 1, row):
-                    if not (board.field[i][col] is None):
+            elif row > row1 and col > col1:
+                for i in range(1, row - row1):
+                    if not (board.field[row - i][col - i] is None):
                         return False
-            elif row == row1 and col < col1:
-                for i in range(col + 1, col1):
-                    if not (board.field[row][i] is None):
+            elif row < row1 and col > col1:
+                for i in range(1, row1 - row):
+                    if not (board.field[row + i][col - i] is None):
                         return False
-            elif row == row1 and col > col1:
-                for i in range(col1 + 1, col):
-                    if not (board.field[row][i] is None):
+            elif row > row1 and col < col1:
+                for i in range(1, col1 - col):
+                    if not (board.field[row - i][col + i] is None):
                         return False
             return True
         else:
