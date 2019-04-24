@@ -114,7 +114,7 @@ class Knight:
 
 
 class King:
-    '''Класс короля. Пока что заглушка, которая может ходить в любую клетку.'''
+    '''Класс короля'''
 
     def __init__(self, color):
         self.color = color
@@ -126,7 +126,24 @@ class King:
         return 'K'
 
     def can_move(self, board, row, col, row1, col1):
-        return True  # Заглушка
+        if board.get_color(row1, col1) != self.get_color() \
+                and ((abs(row - row1) == 1 and abs(col - col1) == 0) or
+                     (abs(row - row1) == 0 and abs(col - col1) == 1) or
+                     (abs(row - row1) == 1 and abs(col - col1) == 1)):
+            return True
+        else:
+            return False
+
+    """
+    def can_move(self, row, col):
+        if self.board.get_color(row, col) != self.get_color() \
+                and ((abs(self.row - row) == 1 and abs(self.col - col) == 0) or
+                     (abs(self.row - row) == 0 and abs(self.col - col) == 1) or
+                     (abs(self.row - row) == 1 and abs(self.col - col) == 1)):
+            return True
+        else:
+            return False
+    """
 
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
@@ -192,7 +209,7 @@ class Queen:
 
 
 class Bishop:
-    '''Класс слона. Пока что заглушка, которая может ходить в любую клетку.'''
+    '''Класс слона.'''
 
     def __init__(self, color):
         self.color = color
@@ -204,7 +221,28 @@ class Bishop:
         return 'B'
 
     def can_move(self, board, row, col, row1, col1):
-        return True  # Заглушка
+        if correct_coords(row, col) and correct_coords(row1, col1) and \
+                board.get_color(row, col) != board.get_color(row1, col1) and \
+                ((row == row1 and col != col1) or (row != row1 and col == col1)):
+            if row < row1 and col == col1:
+                for i in range(row + 1, row1):
+                    if not (board.field[i][col] is None):
+                        return False
+            elif row > row1 and col == col1:
+                for i in range(row1 + 1, row):
+                    if not (board.field[i][col] is None):
+                        return False
+            elif row == row1 and col < col1:
+                for i in range(col + 1, col1):
+                    if not (board.field[row][i] is None):
+                        return False
+            elif row == row1 and col > col1:
+                for i in range(col1 + 1, col):
+                    if not (board.field[row][i] is None):
+                        return False
+            return True
+        else:
+            return False
 
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
