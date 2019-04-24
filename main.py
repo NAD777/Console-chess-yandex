@@ -95,7 +95,7 @@ class Pawn:
 
 
 class Knight:
-    '''Класс коня. Пока что заглушка, которая может ходить в любую клетку.'''
+    '''Класс коня'''
 
     def __init__(self, color):
         self.color = color
@@ -107,7 +107,21 @@ class Knight:
         return 'N'  # kNight, буква 'K' уже занята королём
 
     def can_move(self, board, row, col, row1, col1):
-        return True  # Заглушка
+        if 0 <= row1 <= 7 and 0 <= col1 <= 7 and (
+                (abs(row1 - row) == 1 and abs(col1 - col) == 2) or (
+                abs(row1 - row) == 2 and abs(col1 - col) == 1)):
+            return True
+        else:
+            return False
+
+    """
+    if 0 <= row <= 7 and 0 <= col <= 7 and (
+                (abs(row - self.row) == 1 and abs(col - self.col) == 2) or (
+                abs(row - self.row) == 2 and abs(col - self.col) == 1)):
+            return True
+        else:
+            return False
+    """
 
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
