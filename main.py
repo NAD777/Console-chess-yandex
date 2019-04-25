@@ -19,6 +19,7 @@ class Rook:
 
     def __init__(self, color):
         self.color = color
+        self.moved = False
 
     def get_color(self):
         return self.color
@@ -49,6 +50,9 @@ class Rook:
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
 
+    def __str__(self):
+        return 'R'
+
 
 class Pawn:
 
@@ -64,6 +68,8 @@ class Pawn:
     def can_move(self, board, row, col, row1, col1):
         # Пешка может ходить только по вертикали
         # "взятие на проходе" не реализовано
+        if not (board.field[row1][col1] is None):
+            return False
         if col != col1:
             return False
 
@@ -75,7 +81,6 @@ class Pawn:
         else:
             direction = -1
             start_row = 6
-
         # ход на 1 клетку
         if row + direction == row1:
             return True
@@ -89,9 +94,14 @@ class Pawn:
         return False
 
     def can_attack(self, board, row, col, row1, col1):
+        if board.g_color(row, col) == board.g_color(row1, col1):
+            return False
         direction = 1 if (self.color == WHITE) else -1
         return (row + direction == row1
                 and (col + 1 == col1 or col - 1 == col1))
+
+    def __str__(self):
+        return 'P'
 
 
 class Knight:
@@ -126,12 +136,16 @@ class Knight:
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
 
+    def __str__(self):
+        return 'N'
+
 
 class King:
     '''Класс короля'''
 
     def __init__(self, color):
         self.color = color
+        self.moved = False
 
     def get_color(self):
         return self.color
@@ -140,7 +154,7 @@ class King:
         return 'K'
 
     def can_move(self, board, row, col, row1, col1):
-        if board.get_color(row1, col1) != self.get_color() \
+        if board.g_color(row1, col1) != self.get_color() \
                 and ((abs(row - row1) == 1 and abs(col - col1) == 0) or
                      (abs(row - row1) == 0 and abs(col - col1) == 1) or
                      (abs(row - row1) == 1 and abs(col - col1) == 1)):
@@ -150,7 +164,7 @@ class King:
 
     """
     def can_move(self, row, col):
-        if self.board.get_color(row, col) != self.get_color() \
+        if self.board.g_color(row, col) != self.g_color() \
                 and ((abs(self.row - row) == 1 and abs(self.col - col) == 0) or
                      (abs(self.row - row) == 0 and abs(self.col - col) == 1) or
                      (abs(self.row - row) == 1 and abs(self.col - col) == 1)):
@@ -162,6 +176,9 @@ class King:
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
 
+    def __str__(self):
+        return 'K'
+
 
 class Queen:
 
@@ -169,6 +186,7 @@ class Queen:
         self.color = color
 
     def get_color(self):
+        # print(self.color)
         return self.color
 
     def char(self):
@@ -176,7 +194,7 @@ class Queen:
 
     def can_move(self, board, row, col, row1, col1):
         if correct_coords(row, col) and correct_coords(row1, col1) and \
-                board.get_color(row, col) != board.get_color(row1, col1) and \
+                board.g_color(row, col) != board.g_color(row1, col1) and \
                 (abs(col - col1) == abs(row - row1) or (row == row1 and col != col1) or
                  (row != row1 and col == col1)):
             if row < row1 and col == col1:
@@ -236,7 +254,7 @@ class Bishop:
 
     def can_move(self, board, row, col, row1, col1):
         if correct_coords(row, col) and correct_coords(row1, col1) and \
-                board.get_color(row, col) != board.get_color(row1, col1) and \
+                board.g_color(row, col) != board.g_color(row1, col1) and \
                 abs(col - col1) == abs(row - row1):
             if row < row1 and col < col1:
                 for i in range(1, row1 - row):
@@ -261,6 +279,9 @@ class Bishop:
     def can_attack(self, board, row, col, row1, col1):
         return self.can_move(board, row, col, row1, col1)
 
+    def __str__(self):
+        return 'B'
+
 
 class Board:
     def __init__(self):
@@ -272,7 +293,32 @@ class Board:
     def current_player_color(self):
         return self.color
 
-    def get_color(self, row, col):
+    def castling0(self):
+        pass
+        # self.field[row][col].__class__.__name__ == 'Pawn'
+
+    def move_and_promote_pawn(self, row, col, row1, col1, char):
+        if self.field[row][col].__class__.__name__ == 'Pawn' \
+                and (self.field[row][col].can_attack(self, row, col, row1, col1) or
+                     self.field[row][col].can_move(self, row, col, row1, col1)) \
+                and ((self.g_color(row, col) == WHITE and row1 == 7)
+                     or (self.g_color(row, col) == BLACK and row1 == 0)) and \
+                self.g_color(row, col) != self.g_color(row1, col1):
+
+            if char == 'Q':
+                self.field[row1][col1] = Queen(self.g_color(row, col))
+            elif char == 'R':
+                self.field[row1][col1] = Rook(self.g_color(row, col))
+            elif char == 'B':
+                self.field[row1][col1] = Bishop(self.g_color(row, col))
+            elif char == 'N':
+                self.field[row1][col1] = Knight(self.g_color(row, col))
+            self.field[row][col] = None
+            return True
+        else:
+            return False
+
+    def g_color(self, row, col):
         if not (self.field[row][col] is None):
             return self.field[row][col].get_color()
         else:
@@ -307,8 +353,9 @@ class Board:
         piece = self.field[row][col]
         if piece is None:
             return False
-        if piece.get_color() != self.color:
-            return False
+        # if piece.get_color() != self.color:
+        #     return False
+        # todo uncomment when do last task
         if self.field[row1][col1] is None:
             if not piece.can_move(self, row, col, row1, col1):
                 return False
