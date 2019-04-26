@@ -29,6 +29,9 @@ class Rook:
     def char(self):
         return 'R'
 
+    def set_moved(self):
+        self.moved = True
+
     def can_move(self, board, row, col, row1, col1):
         # Невозможно сделать ход в клетку, которая не лежит в том же ряду
         # или столбце клеток.
@@ -310,7 +313,7 @@ class Board:
                 not self.get_piece(x_k, y_k).moved:
             if self.field[x1][y1].__class__.__name__ == 'Rook' and \
                     not self.get_piece(x1, y1).moved and \
-                    self.get_piece(x1, y1).can_move(self, x1, y1, x_k, y_k - 1)\
+                    self.get_piece(x1, y1).can_move(self, x1, y1, x_k, y_k) \
                     and self.g_color(x1, y1) == self.g_color(x_k, y_k):
                 self.field[x_k][y_k - 1] = self.field[x1][y1]
 
@@ -324,8 +327,34 @@ class Board:
         else:
             return False
 
-        # self.color = opponent(self.color)
-        # self.field[row][col].__class__.__name__ == 'Pawn'
+    def castling7(self):
+        if self.color == WHITE:
+            x_k, y_k = 0, 4
+            x1, y1 = 0, 7
+        else:
+            x_k, y_k = 7, 4
+            x1, y1 = 7, 7
+        # print(self.get_piece(x_k, y_k).moved)
+        if self.get_piece(x_k, y_k).__class__.__name__ == 'King' and \
+                not self.get_piece(x_k, y_k).moved:
+            if self.field[x1][y1].__class__.__name__ == 'Rook' and \
+                    not self.get_piece(x1, y1).moved and \
+                    self.get_piece(x1, y1).can_move(self, x1, y1, x_k, y_k) \
+                    and self.g_color(x1, y1) == self.g_color(x_k, y_k):
+                self.field[x_k][y_k + 1] = self.field[x1][y1]
+
+                self.field[x1][y1] = None
+                self.field[x_k][y_k + 2] = self.field[x_k][y_k]
+                self.field[x_k][y_k] = None
+                self.color = opponent(self.color)
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    # self.color = opponent(self.color)
+    # self.field[row][col].__class__.__name__ == 'Pawn'
 
     def move_and_promote_pawn(self, row, col, row1, col1, char):
         if self.field[row][col].__class__.__name__ == 'Pawn' \
@@ -410,22 +439,3 @@ class Board:
             for el in line:
                 print("{:>6}".format(str(el)), end='')
             print()
-
-
-board = Board()
-board.field = [([None] * 8) for i in range(8)]
-board.field[0][0] = Rook(WHITE)
-board.field[0][4] = King(WHITE)
-board.field[0][7] = Rook(WHITE)
-
-board.field[7][0] = Rook(BLACK)
-board.field[7][4] = King(BLACK)
-board.field[7][7] = Rook(BLACK)
-board.pprint()
-
-print("Рокировка")
-print(board.castling0())
-# print(board.castling7())
-board.pprint()
-print(board.castling0())
-board.pprint()
