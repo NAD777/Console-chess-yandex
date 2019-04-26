@@ -1,3 +1,5 @@
+from copy import copy
+
 WHITE = 1
 BLACK = 2
 
@@ -150,6 +152,9 @@ class King:
     def get_color(self):
         return self.color
 
+    def set_moved(self):
+        self.moved = True
+
     def char(self):
         return 'K'
 
@@ -294,7 +299,32 @@ class Board:
         return self.color
 
     def castling0(self):
-        pass
+        if self.color == WHITE:
+            x_k, y_k = 0, 4
+            x1, y1 = 0, 0
+        else:
+            x_k, y_k = 7, 4
+            x1, y1 = 7, 0
+        # print(self.get_piece(x_k, y_k).moved)
+        if self.get_piece(x_k, y_k).__class__.__name__ == 'King' and \
+                not self.get_piece(x_k, y_k).moved:
+            if self.field[x1][y1].__class__.__name__ == 'Rook' and \
+                    not self.get_piece(x1, y1).moved and \
+                    self.get_piece(x1, y1).can_move(self, x1, y1, x_k, y_k - 1)\
+                    and self.g_color(x1, y1) == self.g_color(x_k, y_k):
+                self.field[x_k][y_k - 1] = self.field[x1][y1]
+
+                self.field[x1][y1] = None
+                self.field[x_k][y_k - 2] = self.field[x_k][y_k]
+                self.field[x_k][y_k] = None
+                self.color = opponent(self.color)
+                return True
+            else:
+                return False
+        else:
+            return False
+
+        # self.color = opponent(self.color)
         # self.field[row][col].__class__.__name__ == 'Pawn'
 
     def move_and_promote_pawn(self, row, col, row1, col1, char):
@@ -353,8 +383,9 @@ class Board:
         piece = self.field[row][col]
         if piece is None:
             return False
-        # if piece.get_color() != self.color:
-        #     return False
+        #
+        if piece.get_color() != self.color:
+            return False
         # todo uncomment when do last task
         if self.field[row1][col1] is None:
             if not piece.can_move(self, row, col, row1, col1):
@@ -364,9 +395,14 @@ class Board:
                 return False
         else:
             return False
+        if self.get_piece(row, col).__class__.__name__ == 'King' or \
+                self.get_piece(row, col).__class__.__name__ == 'Rook':
+            self.get_piece(row, col).set_moved()
+
         self.field[row][col] = None  # Снять фигуру.
         self.field[row1][col1] = piece  # Поставить на новое место.
         self.color = opponent(self.color)
+
         return True
 
     def pprint(self):
@@ -374,3 +410,22 @@ class Board:
             for el in line:
                 print("{:>6}".format(str(el)), end='')
             print()
+
+
+board = Board()
+board.field = [([None] * 8) for i in range(8)]
+board.field[0][0] = Rook(WHITE)
+board.field[0][4] = King(WHITE)
+board.field[0][7] = Rook(WHITE)
+
+board.field[7][0] = Rook(BLACK)
+board.field[7][4] = King(BLACK)
+board.field[7][7] = Rook(BLACK)
+board.pprint()
+
+print("Рокировка")
+print(board.castling0())
+# print(board.castling7())
+board.pprint()
+print(board.castling0())
+board.pprint()
