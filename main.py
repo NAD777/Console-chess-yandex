@@ -1,7 +1,19 @@
-from copy import copy
-
 WHITE = 1
 BLACK = 2
+
+
+def print_board(board):
+    print('     +----+----+----+----+----+----+----+----+')
+    for row in range(7, -1, -1):
+        print(' ', row, end='  ')
+        for col in range(8):
+            print('|', board.cell(row, col), end=' ')
+        print('|')
+        print('     +----+----+----+----+----+----+----+----+')
+    print(end='        ')
+    for col in range(8):
+        print(col, end='    ')
+    print()
 
 
 def correct_coords(row, col):
@@ -72,7 +84,6 @@ class Pawn:
 
     def can_move(self, board, row, col, row1, col1):
         # Пешка может ходить только по вертикали
-        # "взятие на проходе" не реализовано
         if not (board.field[row1][col1] is None):
             return False
         if col != col1:
@@ -165,7 +176,8 @@ class King:
         if board.g_color(row1, col1) != self.get_color() \
                 and ((abs(row - row1) == 1 and abs(col - col1) == 0) or
                      (abs(row - row1) == 0 and abs(col - col1) == 1) or
-                     (abs(row - row1) == 1 and abs(col - col1) == 1)):
+                     (abs(row - row1) == 1 and abs(col - col1) == 1)) and \
+                not board.is_under_attack(row1, col1, opponent(self.get_color()), row, col):
             return True
         else:
             return False
@@ -297,6 +309,16 @@ class Board:
         self.field = []
         for row in range(8):
             self.field.append([None] * 8)
+
+    def king_is_alive(self, color):
+        king_color = color
+        for i in range(8):
+            for j in range(8):
+                piece = self.get_piece(i, j)
+                if not (piece is None) and piece.get_color() == king_color and \
+                        piece.__class__.__name__ == 'King':
+                    return True
+        return False
 
     def current_player_color(self):
         return self.color
@@ -439,3 +461,131 @@ class Board:
             for el in line:
                 print("{:>6}".format(str(el)), end='')
             print()
+
+    def is_under_attack(self, row, col, color, cur_row, cur_col):
+        for i in range(8):
+            for j in range(8):
+                if i == cur_row and j == cur_col:
+                    continue
+                if not (self.field[i][j] is None) and 0 <= row <= 7 and 0 <= col <= 7 and \
+                        self.field[i][j].get_color() == color and \
+                        self.field[i][j].can_move(self, i, j, row, col):
+                    return True
+        return False
+
+    def start(self):
+        self.color = WHITE
+        self.field = []
+        for row in range(8):
+            self.field.append([None] * 8)
+        self.field[0] = [
+            Rook(WHITE), Knight(WHITE), Bishop(WHITE), Queen(WHITE),
+            King(WHITE), Bishop(WHITE), Knight(WHITE), Rook(WHITE)
+        ]
+        self.field[1] = [
+            Pawn(WHITE), Pawn(WHITE), Pawn(WHITE), Pawn(WHITE),
+            Pawn(WHITE), Pawn(WHITE), Pawn(WHITE), Pawn(WHITE)
+        ]
+        self.field[6] = [
+            Pawn(BLACK), Pawn(BLACK), Pawn(BLACK), Pawn(BLACK),
+            Pawn(BLACK), Pawn(BLACK), Pawn(BLACK), Pawn(BLACK)
+        ]
+        self.field[7] = [
+            Rook(BLACK), Knight(BLACK), Bishop(BLACK), Queen(BLACK),
+            King(BLACK), Bishop(BLACK), Knight(BLACK), Rook(BLACK)
+        ]
+
+
+class Interface:
+    def __init__(self, board):
+        self.board = board
+
+    def fake_clear(self):
+        print('\n' * 25)
+
+    def start(self):
+        self.board.start()
+        print_board(self.board)
+
+    def print(self):
+        self.fake_clear()
+        print('Ход белых:' if self.board.color == WHITE else 'Ход черных:')
+        print_board(self.board)
+
+    def move(self, row, col, to_row, to_col):
+        if self.board.color == self.board.g_color(row, col):
+            if self.board.move_piece(row, col, to_row, to_col):
+                if not self.board.king_is_alive(self.board.color):
+                    print('Победа {}'.format('черных' if self.board.color == WHITE else 'белых'))
+                    print('Начать новую игру? y/n')
+                    s = input()
+                    if s == 'y':
+                        self.start()
+                    else:
+                        exit()
+                # self.print()
+            else:
+                print('Так фигура пойти не может')
+        else:
+            print('Чужой цвет')
+
+    def castling0(self):
+        self.board.castling0()
+
+    def castling7(self):
+        self.board.castling7()
+
+    def move_and_promote_pawn(self, row, col, row1, col1, char):
+        self.board.move_and_promote_pawn(row, col, row1, col1, char)
+
+
+print('Команды: \n\tmove <row> <col> <row1> <col1>\n\texit\n\t'
+      'promote_pawn <row> <col> <row1> <col1>\n\tcast <col> - рокировка')
+print('Start? y/n')
+if input() == 'n':
+    exit()
+inter = Interface(Board())
+inter.start()
+inter.print()
+while True:
+    inter.print()
+    s = input('Input: ')
+    arr = s.split()
+    s = arr[0]
+    arr = arr[1:]
+    if s == 'exit':
+        exit()
+    elif s == 'move':
+        row, col, row1, col1 = map(int, arr)
+        # print([row, col, row1, col1])
+        inter.move(row, col, row1, col1)
+    elif s == 'promote_pawn':
+        char = arr[-1]
+        arr = arr[:-1]
+        row, col, row1, col1 = map(int, arr)
+        inter.move_and_promote_pawn(row, col, row1, col1, char)
+    elif s == 'cast':
+        col = arr[0]
+        if col == '0':
+            inter.castling0()
+        elif col == '7':
+            inter.castling7()
+        else:
+            print('Что-то пошло не так')
+
+# fast end:
+# move 1 4 3 4
+# move 6 5 4 5
+# move 0 3 4 7
+# move 6 0 5 0
+# move 4 7 7 4
+#
+# move 0 1 2 0
+# move 6 0 5 0
+# move 1 3 2 3
+# move 6 1 5 1
+# move 0 2 2 4
+# move 6 2 5 2
+# move 0 3 1 3
+# move 6 3 5 3
+# cast 0
